@@ -7,7 +7,7 @@ pub fn main() -> iced::Result {
 
 struct Counter {
     value: i32,
-}
+}   
 
 #[derive(Debug, Clone, Copy)]
 enum Message {

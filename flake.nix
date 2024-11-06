@@ -27,14 +27,14 @@
             packageFun = import ./Cargo.nix;
             packageOverrides = pkgs: pkgs.rustBuilder.overrides.all ++ [
               (pkgs.rustBuilder.rustLib.makeOverride {
-                name = "counter";
+                name = "skycalendar";
                 overrideAttrs = drv: {
                   propagatedNativeBuildInputs = drv.propagatedNativeBuildInputs or [ ] ++ (with pkgs; [
                     pkg-config
                     makeWrapper
                   ] ++ runtimeDeps);
                   postFixup = ''
-                    patchelf --set-rpath ${pkgs.lib.makeLibraryPath runtimeDeps} $bin/bin/counter
+                    patchelf --set-rpath ${pkgs.lib.makeLibraryPath runtimeDeps} $bin/bin/skycalendar
                   '';
                 };
               })
@@ -42,8 +42,8 @@
           };
         in {
           packages = rec {
-            counter = (rustPkgs.workspace.counter {}).bin;
-            default = counter;
+            skycalendar = (rustPkgs.workspace.skycalendar {}).bin;
+            default = skycalendar;
           };
           devShells.default = pkgs.mkShell rec {
             buildInputs = with pkgs; [
