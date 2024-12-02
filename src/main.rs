@@ -1,51 +1,62 @@
-use iced::widget::{button, column, text};
-use iced::{Alignment, Element, Sandbox, Settings};
+use iced::{Sandbox, Settings};
+use iced::widget::{Button, Column, Text}; // Corrected imports
+use iced_grid::{CellMessage, Grid, GridMessage, CellConfig};
 
 pub fn main() -> iced::Result {
-    Counter::run(Settings::default())
+    MyApp::run(Settings::default())
 }
 
-struct Counter {
-    value: i32,
-}   
-
-#[derive(Debug, Clone, Copy)]
-enum Message {
-    IncrementPressed,
-    DecrementPressed,
+struct MyApp {
+    grid: Grid,
 }
 
-impl Sandbox for Counter {
-    type Message = Message;
+impl Sandbox for MyApp {
+    type Message = GridMessage;
 
     fn new() -> Self {
-        Self { value: 0 }
+        let mut grid = Grid::new();
+        grid.add_row();
+        grid.get_row(0).push(CellConfig::Text("Hello, Cell!".to_string()));
+
+        Self { grid }
     }
 
     fn title(&self) -> String {
-        String::from("Counter - Iced")
+        String::from("My Grid Application")
     }
 
-    fn update(&mut self, message: Message) {
+    fn update(&mut self, message: GridMessage) {
         match message {
-            Message::IncrementPressed => {
-                self.value += 1;
+            GridMessage::AddCell(row_index) => {
+                self.grid
+                    .get_row(row_index)
+                    .push(CellConfig::Text("New cell".to_string()));
             }
-            Message::DecrementPressed => {
-                self.value -= 1;
+            GridMessage::Cell(row_index, cell_index, CellMessage::Edit) => {
+                if let Some(cell) = self.grid.get_cell(row_index, cell_index) {
+                    cell.edit(CellConfig::Text("Edited!".to_string()));
+                }
+            }
+            GridMessage::Cell(row_index, cell_index, CellMessage::Remove) => {
+                if let Some(cell) = self.grid.get_cell(row_index, cell_index) {
+                    cell.remove();
+                }
+            }
+            GridMessage::Cell(row_index, cell_index, CellMessage::Clicked) => {
+                todo!("Handle cell click here.");
             }
         }
     }
 
-    fn view(&self) -> Element<Message> {
-        column![
-            button("Increment").on_press(Message::IncrementPressed),
-            text(self.value).size(50),
-            button("Decrement").on_press(Message::DecrementPressed)
-        ]
-        .padding(20)
-        .align_items(Alignment::Center)
-        .into()
+    fn view(&self) -> iced::Element<Self::Message> {
+        // Button to add a new row
+        let add_row_button = Button::new(Text::new("Add Row"))
+            .on_press(GridMessage::AddCell(self.grid.row_count()));
+
+        Column::new()
+            .push(add_row_button)
+            .push(self.grid.view())
+            .into()
     }
 }
 
