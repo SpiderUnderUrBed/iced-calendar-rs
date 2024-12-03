@@ -1,6 +1,5 @@
-use iced::{Sandbox, Settings};
-use iced::widget::{Button, Column, Row, Text, TextInput};
-use iced::{Element};
+use iced::{Background, Color, widget::{Button, Column, Container, Row, Text, TextInput}, widget::container::{Appearance, StyleSheet}};
+use iced::{Element, Length, Sandbox, Settings};
 
 pub fn main() -> iced::Result {
     MyApp::run(Settings::default())
@@ -62,7 +61,6 @@ impl Sandbox for MyApp {
 
         // Button to add a new row
         let add_row_button = Button::new(Text::new("Add Row")).on_press(Message::AddRow);
-
         content = content.push(add_row_button);
 
         // Row for input and adding a cell
@@ -86,25 +84,40 @@ impl Sandbox for MyApp {
 
         // Display the grid
         for (row_index, row) in self.rows.iter().enumerate() {
-            let row_view = Row::new()
+            let mut row_view = Row::new()
                 .spacing(10)
-                .push(Text::new(format!("Row {}:", row_index))); // Label each row
-            let cells = row
-                .iter()
-                .map(|cell_content| {
-                    Text::new(cell_content.clone())
-                        .size(20)
-                        .into()
-                })
-                .collect::<Vec<Element<Message>>>(); // Convert cell contents to iced `Text` widgets
+                .push(Container::new(Text::new(format!("Row {}:", row_index)))
+                    .padding(5)
+                    .width(Length::Shrink)
+                    .center_y());
 
-            let full_row = cells
-                .into_iter()
-                .fold(row_view, |row_view, cell| row_view.push(cell));
+            // Create a container for each cell
+            for cell_content in row.iter() {
+                let cell = Container::new(Text::new(cell_content.clone()))
+                    .padding(10)
+                    .width(Length::Shrink)
+                    .center_y()
+                    .style(|_theme: &_| CellStyle.appearance(&()));// Use a closure to apply the style
+                row_view = row_view.push(cell);
+            }
 
-            content = content.push(full_row);
+            content = content.push(row_view);
         }
 
         content.into()
+    }
+}
+
+// Custom style for the cell container
+pub struct CellStyle;
+
+impl StyleSheet for CellStyle {
+    type Style = (); // The style type for our container (empty in this case)
+
+    fn appearance(&self, _: &Self::Style) -> Appearance {
+        Appearance {
+            background: Some(Background::Color(Color::from_rgb(0.8, 0.8, 0.8))), // Light gray background
+            ..Default::default() // Use default values for other properties
+        }
     }
 }
