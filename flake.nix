@@ -13,7 +13,7 @@
       systems = nixpkgs.lib.systems.flakeExposed;
       perSystem = {self', pkgs, system, ...}:
         let
-          rustVersion = "1.76.0";
+          rustVersion = "1.80.0";  # Update to a compatible version
           pkgs = import nixpkgs {
             inherit system;
             overlays = [inputs.cargo2nix.overlays.default (import inputs.rust-overlay)];
