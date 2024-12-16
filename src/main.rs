@@ -1,5 +1,6 @@
 use iced::application::Title;
-use iced::{Application, Element, Settings, Subscription, Theme};
+use iced::widget::container;
+use iced::{Application, Color, Element, Settings, Subscription, Theme};
 use iced_grid::{Grid, RowData, CellMessage};
 
 #[derive(Debug, Clone)]
@@ -32,6 +33,35 @@ pub struct MyApp {
     grid: Grid<Message, MyTheme>,
 }
 
+use iced::{Background};
+
+#[derive(Debug, Clone)]
+pub struct MyStyle {
+    pub background_color: Color,
+    pub text_color: Color,
+    pub padding: f32,
+}
+
+impl Default for MyStyle {
+    fn default() -> Self {
+        MyStyle {
+            background_color: Color::from_rgb(0.2, 0.4, 0.6),
+            text_color: Color::WHITE,
+            padding: 10.0,
+        }
+    }
+}
+
+impl From<MyStyle> for container::Style {
+    fn from(style: MyStyle) -> Self {
+        container::Style {
+            background: Some(Background::Color(style.background_color)),
+            ..Default::default()
+        }
+    }
+}
+
+
 impl Default for MyApp {
     fn default() -> Self {
         let rows = vec![];
@@ -39,7 +69,10 @@ impl Default for MyApp {
         // Create the grid
         let mut grid = Grid::new(
             rows,
-            (),
+            container::Style {
+                background: Some(Background::Color(Color::BLACK)),
+                ..Default::default()
+            },
             |_offset: iced::widget::scrollable::AbsoluteOffset| UiMessage::Sync.into(),
         );
 
@@ -49,6 +82,15 @@ impl Default for MyApp {
         row.push_button("Add Row".into(), CellMessage::Clicked);
         row.push_button("Add Cell".into(), CellMessage::Clicked);
         grid.add_row(row);
+        grid.style(
+                container::Style {
+                background: Some(Background::Color(Color::BLACK)),
+                ..Default::default()
+            }
+        );
+        
+        
+
 
         MyApp { grid }
     }
@@ -58,11 +100,14 @@ impl Default for MyApp {
 pub struct MyTheme;
 
 impl iced_grid::style::Catalog for MyTheme {
-    type Style = ();
+    type Style = container::Style;
 
-    fn TARGET(&self, _style: &Self::Style) -> iced::widget::container::Style {
-        iced::widget::container::Style::default()
-    }
+    fn style(&self, style: &Self::Style) -> iced::widget::container::Style {
+        container::Style {
+            background: Some(iced::Background::Color(Color::WHITE)),
+            ..Default::default()
+        }
+    }    
 }
 
 impl MyApp {
