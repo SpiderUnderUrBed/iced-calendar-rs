@@ -1,6 +1,6 @@
 use iced::application::Title;
-use iced::widget::container;
-use iced::{Application, Color, Element, Settings, Subscription, Theme};
+use iced::widget::{container, Column, Row, Space};
+use iced::{Application, Color, Element, Length, Renderer, Settings, Subscription, Theme};
 use iced_grid::{Grid, RowData, CellMessage};
 
 #[derive(Debug, Clone)]
@@ -12,7 +12,7 @@ enum Message {
 #[derive(Debug, Clone)]
 enum UiMessage {
     AddRow,
-    AddCell(usize), // usize represents the row to which a cell will be added
+    AddCell(usize), 
     ButtonClicked(usize, usize),
     Sync,
 }
@@ -42,48 +42,31 @@ pub struct MyStyle {
     pub padding: f32,
 }
 
-impl Default for MyStyle {
-    fn default() -> Self {
-        MyStyle {
-            background_color: Color::from_rgb(0.2, 0.4, 0.6),
-            text_color: Color::WHITE,
-            padding: 10.0,
-        }
-    }
-}
-
-impl From<MyStyle> for container::Style {
-    fn from(style: MyStyle) -> Self {
-        container::Style {
-            background: Some(Background::Color(style.background_color)),
-            ..Default::default()
-        }
-    }
-}
-
 
 impl Default for MyApp {
     fn default() -> Self {
         let rows = vec![];
 
-        // Create the grid
+        
         let mut grid = Grid::new(
             rows,
             container::Style {
-                background: Some(Background::Color(Color::BLACK)),
+                background: Some(Background::Color(Color::WHITE)),
                 ..Default::default()
             },
             |_offset: iced::widget::scrollable::AbsoluteOffset| UiMessage::Sync.into(),
         );
 
-        // Add an initial row to the grid
+        
         let mut row = RowData::default();
         row.push_text("Row 1, Cell 1".into());
         row.push_button("Add Row".into(), CellMessage::Clicked);
         row.push_button("Add Cell".into(), CellMessage::Clicked);
         grid.add_row(row);
+        
+        
         grid.style(
-                container::Style {
+            container::Style {
                 background: Some(Background::Color(Color::BLACK)),
                 ..Default::default()
             }
@@ -102,17 +85,35 @@ pub struct MyTheme;
 impl iced_grid::style::Catalog for MyTheme {
     type Style = container::Style;
 
-    fn style(&self, style: &Self::Style) -> iced::widget::container::Style {
+    fn body(&self, _style: &Self::Style) -> iced::widget::container::Style {
         container::Style {
-            background: Some(iced::Background::Color(Color::WHITE)),
+            background: Some(iced::Background::Color(Color::from_rgb(0.8, 0.8, 0.8))),
             ..Default::default()
         }
-    }    
+    }
+
+    fn cell(&self, _row: usize, _col: usize) -> iced::widget::container::Style {
+        container::Style {
+            background: Some(iced::Background::Color(Color::from_rgb(0.6, 0.6, 0.9))),
+            ..Default::default()
+        }
+    }
 }
 
 impl MyApp {
     fn view<'a>(&'a self) -> iced::Element<'a, Message> {
-        self.grid.view().map(Message::from)
+        let centered_grid= Column::new()
+            .push(Space::with_height(Length::Fill)) 
+            .push(
+                Row::new()
+                    .push(Space::with_width(Length::Fill)) 
+                    .push(self.grid.view()) 
+                    .push(Space::with_width(Length::Fill)), 
+            )
+            .push(Space::with_height(Length::Fill));
+
+        let element: Element<'_, Message> = Element::new(centered_grid).map(Message::from);
+        element
     }
 
     fn update(&mut self, message: Message) {
@@ -128,7 +129,7 @@ impl MyApp {
                 }
                 UiMessage::AddCell(row_index) => {
                     if let Some(row) = self.grid.get_row_mut(row_index) {
-                        let cell_count = row.cells.len() - 2; // Exclude Add Row and Add Cell buttons
+                        let cell_count = row.cells.len() - 2; 
                         row.push_text(format!("Row {}, Cell {}", row_index + 1, cell_count + 1).into());
                     }
                 }
@@ -141,17 +142,17 @@ impl MyApp {
             },
             Message::Grid(grid_message) => match grid_message {
                 iced_grid::GridMessage::Cell(row, col, CellMessage::Clicked) => {
-                    // Determine action based on the column index
+                    
                     if col == 1 {
-                        // Add Row button clicked
+                        
                         self.update(Message::Ui(UiMessage::AddRow));
                     } else if col == 2 {
-                        // Add Cell button clicked
+                        
                         self.update(Message::Ui(UiMessage::AddCell(row)));
                     }
                 }
                 _ => {
-                    // Handle other grid messages if necessary
+                    
                     println!("Grid message received: {:?}", grid_message);
                 }
             },
