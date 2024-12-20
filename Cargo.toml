@@ -9,6 +9,8 @@ publish = false
 [dependencies]
 iced = "0.13"
 iced_grid  = { path = "./iced_grid" }
+iced_renderer = "0.13.0"
+iced_tiny_skia = "0.13.0"
 
 [lints.rust]
 rust_2018_idioms = "deny"

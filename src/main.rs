@@ -2,11 +2,11 @@ use iced::advanced::graphics::core::Element;
 use iced::advanced::graphics::futures::backend::default;
 use iced::advanced::graphics::text::cosmic_text::Wrap;
 use iced::application::Title;
-use iced::daemon::DefaultStyle;
+use iced::daemon::{Appearance, DefaultStyle};
 use iced::widget::container;
-use iced::{Application, Color, Settings, Subscription, Theme};
+use iced::{Application, Color, Settings, Size, Subscription, Theme};
 use iced_grid::{CellMessage, Grid, GridMessage, RowData};
-use iced_grid::style::wrapper::{Target, Wrapper};
+use iced_grid::style::wrapper::{Style, Wrapper};
 
 #[derive(Debug, Clone)]
 enum Message {
@@ -34,7 +34,10 @@ impl From<iced_grid::GridMessage> for Message {
     }
 }
 
-pub struct MyApp {
+pub struct MyApp 
+where 
+    Message: Clone
+{
     grid: Grid<Message, MyTheme>,
 }
 
@@ -53,13 +56,17 @@ impl Default for MyApp {
         let rows = vec![];
 
         // Create the grid
-        let mut grid = Grid::new(
+        let mut grid: Grid<Message, MyTheme> = Grid::new(
             rows,
             container::Style {
                 background: Some(Background::Color(Color::WHITE)),
                 ..Default::default()
             },
             |_offset: iced::widget::scrollable::AbsoluteOffset| UiMessage::Sync.into(),
+            400.0,
+            400.0,
+            Size::new(100.0, 100.0),
+            MyTheme::Main
             // Element::new(grid)
         );
 
@@ -70,6 +77,8 @@ impl Default for MyApp {
         row.push_button("Add Cell".into(), CellMessage::Clicked);
         row.push_container(container("New Cell").center(100));
         grid.add_row(row);
+        let mut row2 = RowData::default();
+        grid.add_row(row2);
         //grid.add_rows(5);
         grid.add_cells_to_all_rows(5);
         grid.style(
@@ -85,30 +94,61 @@ impl Default for MyApp {
         MyApp { grid }
     }
 }
+// #[derive(Clone, Default)]
+// pub struct MyTest;
+
+// trait C {};
+// trait B {};
+
+// #[derive(Clone, Default)]
+// pub enum A{}
+
+// impl B for MyTheme {}
+// impl C for MyTheme {}
+
+// MyTheme::B
 
 #[derive(Clone, Default)]
-pub struct MyTheme;
+pub enum MyTheme{   
+    #[default]
+    Main,
+    //Black
+}
 
 impl DefaultStyle for MyTheme {
     fn default_style(&self) -> iced::daemon::Appearance {
-        todo!()
+        iced::daemon::Appearance {
+            background_color: Color::BLACK,
+            text_color: Color::WHITE
+        }
     }
 }
+
 impl iced_grid::style::Catalog for MyTheme {
     type Style = container::Style;
+    type Themes = iced::Theme;
 
     fn body(&self, _style: &Self::Style) -> iced::widget::container::Style {
-        container::Style {
-            background: Some(iced::Background::Color(Color::from_rgb(0.8, 0.8, 0.8))),
-            ..Default::default()
+            match self {
+                &MyTheme::Main => container::Style {
+                background: Some(iced::Background::Color(Color::from_rgb(0.8, 0.8, 0.8))),
+                ..Default::default()
+            }
         }
     }
 
     fn cell(&self, _row: usize, _col: usize) -> iced::widget::container::Style {
-        container::Style {
-            background: Some(iced::Background::Color(Color::from_rgb(0.6, 0.6, 0.9))),
-            ..Default::default()
+        match self {
+            &MyTheme::Main => container::Style {
+                background: Some(iced::Background::Color(Color::from_rgb(0.6, 0.6, 0.9))),
+                ..Default::default()
+            }
         }
+    }
+    
+    fn resolve_theme(&self) -> Self::Themes {
+        iced::Theme::Dark
+        //MyTheme::Main
     }
 }
 
@@ -118,7 +158,8 @@ impl MyApp {
      
          iced::Element::new(Wrapper {
              content: &self.grid,
-             target: Target::Style,
+             target: Style,
+             theme: self.grid.theme.clone(),
              style: self.grid.style,
          })
      }
