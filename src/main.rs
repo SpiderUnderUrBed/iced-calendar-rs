@@ -125,7 +125,7 @@ impl DefaultStyle for MyTheme {
 }
 
 impl iced_grid::style::Catalog for MyTheme {
-    type Style = container::Style;
+    type Style = <Theme as iced_grid::style::Catalog>::Style;
     type Themes = iced::Theme;
 
     fn body(&self, _style: &Self::Style) -> iced::widget::container::Style {
