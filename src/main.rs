@@ -82,23 +82,23 @@ impl Default for MyApp {
 #[derive(Clone)]
 pub struct MyTheme;
 
-impl iced_grid::style::Catalog for MyTheme {
-    type Style = container::Style;
+// impl iced_grid::style::Catalog for MyTheme {
+//     type Style = container::Style;
 
-    fn body(&self, _style: &Self::Style) -> iced::widget::container::Style {
-        container::Style {
-            background: Some(iced::Background::Color(Color::from_rgb(0.8, 0.8, 0.8))),
-            ..Default::default()
-        }
-    }
+//     fn body(&self, _style: &Self::Style) -> iced::widget::container::Style {
+//         container::Style {
+//             background: Some(iced::Background::Color(Color::from_rgb(0.8, 0.8, 0.8))),
+//             ..Default::default()
+//         }
+//     }
 
-    fn cell(&self, _row: usize, _col: usize) -> iced::widget::container::Style {
-        container::Style {
-            background: Some(iced::Background::Color(Color::from_rgb(0.6, 0.6, 0.9))),
-            ..Default::default()
-        }
-    }
-}
+//     fn cell(&self, _row: usize, _col: usize) -> iced::widget::container::Style {
+//         container::Style {
+//             background: Some(iced::Background::Color(Color::from_rgb(0.6, 0.6, 0.9))),
+//             ..Default::default()
+//         }
+//     }
+// }
 
 impl MyApp {
     fn view<'a>(&'a self) -> iced::Element<'a, Message> {
