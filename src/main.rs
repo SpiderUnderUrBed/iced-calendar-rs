@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::vec;
+
 use iced::advanced::graphics::core::Element;
 use iced::advanced::graphics::futures::backend::default;
 use iced::advanced::graphics::text::cosmic_text::Wrap;
@@ -5,14 +8,14 @@ use iced::application::Title;
 use iced::daemon::{Appearance, DefaultStyle};
 use iced::widget::container;
 use iced::{Application, Color, Settings, Size, Subscription, Theme};
-use iced_grid::{CellMessage, Grid, GridMessage, RowData};
+use iced_grid::{Cell, CellMessage, Grid, GridMessage, RowData};
 use iced_grid::style::wrapper::{Style, Wrapper};
 
 #[derive(Debug, Clone)]
 enum Message {
     Ui(UiMessage),
     Grid(iced_grid::GridMessage),
-    //Sync,
+    
 }
 
 #[derive(Debug, Clone)]
@@ -35,11 +38,11 @@ impl From<iced_grid::GridMessage> for Message {
     }
 }
 
-pub struct MyApp 
+pub struct MyApp
 where 
     Message: Clone
 {
-    grid: Grid<Message, MyTheme>,
+    resulting_rows: RefCell<Vec<RowData>>,
 }
 
 use iced::{Background};
@@ -54,59 +57,149 @@ pub struct MyStyle {
 
 impl Default for MyApp {
     fn default() -> Self {
-        let rows = vec![];
+        // let rows = vec![];
 
         
-        let mut grid: Grid<Message, MyTheme> = Grid::new(
-            rows,
-            container::Style {
-                background: Some(Background::Color(Color::WHITE)),
-                ..Default::default()
-            },
-            |_offset: iced::widget::scrollable::AbsoluteOffset| UiMessage::Sync.into(),
-            400.0,
-            400.0,
-            Size::new(100.0, 100.0),
-            MyTheme::Main
+        // let mut grid: Grid<Message, MyTheme> = Grid::new(
+        //     rows,
+        //     container::Style {
+        //         background: Some(Background::Color(Color::WHITE)),
+        //         ..Default::default()
+        //     },
+        //     |_offset: iced::widget::scrollable::AbsoluteOffset| UiMessage::Sync.into(),
+        //     400.0,
+        //     400.0,
+        //     Size::new(100.0, 100.0),
+        //     MyTheme::Main
             
-        );
+        // );
 
+        
+        // let mut row = RowData::default();
+        // row.push_text("Row 1, Cell 1".into());
+        // row.push_button("Add Row".into(), CellMessage::Clicked);
+        // row.push_button("Add Cell".into(), CellMessage::Clicked);
+        // row.push_container(container("New Cell").center(100));
+        // grid.add_row(row);
+        // let mut row2 = RowData::default();
+        // grid.add_row(row2);
+        
+        // grid.add_cells_to_all_rows(5);
+        // grid.style(
+        //     container::Style {
+        //         background: Some(Background::Color(Color::BLACK)),
+        //         ..Default::default()
+        //     }
+        // );
+        
+        // let resulting_rows = RefCell::new(grid
+        // .rows_mut_iter()
+        // .map(|row| RowData::new(std::mem::take(&mut row.cells)))
+        // .collect());
+        //let rows = vec![];
         
         let mut row = RowData::default();
         row.push_text("Row 1, Cell 1".into());
         row.push_button("Add Row".into(), CellMessage::Clicked);
         row.push_button("Add Cell".into(), CellMessage::Clicked);
         row.push_container(container("New Cell").center(100));
-        grid.add_row(row);
         let mut row2 = RowData::default();
-        grid.add_row(row2);
-        
-        grid.add_cells_to_all_rows(5);
-        grid.style(
-            container::Style {
-                background: Some(Background::Color(Color::BLACK)),
-                ..Default::default()
-            }
-        );
-        
-        
+        let resulting_rows = RefCell::new(vec![ row, row2 ]);
 
-
-        MyApp { grid }
+        MyApp { resulting_rows }
     }
 }
 
 
 
 
+impl MyApp {
+
+    fn view(&self) -> iced::Element<'_, Message, MyTheme> {
+        let rows = std::mem::take(&mut *self.resulting_rows.borrow_mut());
+
+        let grid: Grid<Message, MyTheme> = Grid::new(
+            rows, // Consume the rows for the grid
+            container::Style {
+                background: Some(Background::Color(Color::WHITE)),
+                ..Default::default()
+            },
+            |_offset: iced::widget::scrollable::AbsoluteOffset| Message::Grid(GridMessage::Sync),
+            400.0,
+            400.0,
+            Size::new(100.0, 100.0),
+            MyTheme::Main,
+        );
 
 
+        iced::Element::from(grid)
+    }
+    
+    
+    
 
+    fn update(&mut self, message: Message) {
+        let rows = std::mem::take(&mut *self.resulting_rows.borrow_mut());
+        let mut grid: Grid<Message, MyTheme> = Grid::new(
+            rows, // Consume the rows for the grid
+            container::Style {
+                background: Some(Background::Color(Color::WHITE)),
+                ..Default::default()
+            },
+            |_offset: iced::widget::scrollable::AbsoluteOffset| Message::Grid(GridMessage::Sync),
+            400.0,
+            400.0,
+            Size::new(100.0, 100.0),
+            MyTheme::Main,
+        );
 
+        match message {
+            Message::Ui(ui_message) => match ui_message {
+                UiMessage::AddRow => {
+                    let mut new_row = RowData::default();
+                    let row_index = grid.row_count();
+                    new_row.push_text(format!("Row {}, Cell 1", row_index + 1).into());
+                    new_row.push_button("Add Row".into(), CellMessage::Clicked);
+                    new_row.push_button("Add Cell".into(), CellMessage::Clicked);
+                    grid.add_row(new_row);
+                }
+                UiMessage::AddCell(row_index) => {
+                    if let Some(row) = grid.get_row_mut(row_index) {
+                        let cell_count = row.cells.len() - 2; 
+                        row.push_text(format!("Row {}, Cell {}", row_index + 1, cell_count + 1).into());
+                    }
+                }
+                UiMessage::ButtonClicked(row, col) => {
+                    println!("Button clicked in row {}, column {}", row, col);
+                }
+                UiMessage::Sync => {
+                    println!("Syncing...");
+                }
+            },
+            Message::Grid(grid_message) => match grid_message {
+                iced_grid::GridMessage::Cell(row, col, CellMessage::Clicked) => {
+                    
+                    if col == 1 {
+                        
+                        self.update(Message::Ui(UiMessage::AddRow));
+                    } else if col == 2 {
+                        
+                        self.update(Message::Ui(UiMessage::AddCell(row)));
+                    }
+                }
+                _ => {
+                    
+                    println!("Grid message received: {:?}", grid_message);
+                }
+            },
+        }
+    }
+    
 
-
-
-
+    fn theme(&self) -> Theme {
+        Theme::default()
+    }
+}
 
 
 #[derive(Clone, Default)]
@@ -176,83 +269,7 @@ impl iced_grid::style::Catalog for MyTheme {
     }
 }
 
-impl MyApp {
-    fn view(&mut self) -> iced::Element<'_, Message, MyTheme>{
-        
-        let grid: Grid<GridMessage, MyTheme> = Grid::new(
-            self.grid.rows_mut_iter().map(|row| RowData {
-                cells: std::mem::take(&mut row.cells), // Move `cells` instead of cloning
-            }),
-            container::Style {
-                background: Some(Background::Color(Color::WHITE)),
-                ..Default::default()
-            },
-            |_offset: iced::widget::scrollable::AbsoluteOffset| GridMessage::Sync,
-            400.0,
-            400.0,
-            Size::new(100.0, 100.0),
-            MyTheme::Main
-        );
-
-         iced::Element::new(Wrapper {
-             content: Box::new(&self.grid),
-             target: Style,
-             theme: self.grid.theme.clone(),
-             style: self.grid.style,
-         })
-     }
-    
-    
-
-    fn update(&mut self, message: Message) {
-        match message {
-            Message::Ui(ui_message) => match ui_message {
-                UiMessage::AddRow => {
-                    let mut new_row = RowData::default();
-                    let row_index = self.grid.row_count();
-                    new_row.push_text(format!("Row {}, Cell 1", row_index + 1).into());
-                    new_row.push_button("Add Row".into(), CellMessage::Clicked);
-                    new_row.push_button("Add Cell".into(), CellMessage::Clicked);
-                    self.grid.add_row(new_row);
-                }
-                UiMessage::AddCell(row_index) => {
-                    if let Some(row) = self.grid.get_row_mut(row_index) {
-                        let cell_count = row.cells.len() - 2; 
-                        row.push_text(format!("Row {}, Cell {}", row_index + 1, cell_count + 1).into());
-                    }
-                }
-                UiMessage::ButtonClicked(row, col) => {
-                    println!("Button clicked in row {}, column {}", row, col);
-                }
-                UiMessage::Sync => {
-                    println!("Syncing...");
-                }
-            },
-            Message::Grid(grid_message) => match grid_message {
-                iced_grid::GridMessage::Cell(row, col, CellMessage::Clicked) => {
-                    
-                    if col == 1 {
-                        
-                        self.update(Message::Ui(UiMessage::AddRow));
-                    } else if col == 2 {
-                        
-                        self.update(Message::Ui(UiMessage::AddCell(row)));
-                    }
-                }
-                _ => {
-                    
-                    println!("Grid message received: {:?}", grid_message);
-                }
-            },
-        }
-    }
-    
-
-    fn theme(&self) -> Theme {
-        Theme::default()
-    }
-}
-
 fn main() -> iced::Result {
-    iced::run("main", MyApp::update, |arg0: &MyApp| MyApp::view(&mut *arg0))
+   
+   iced::run("main", MyApp::update, MyApp::view)
 }
