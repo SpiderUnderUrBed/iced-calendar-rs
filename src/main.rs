@@ -8,8 +8,10 @@ use iced::application::Title;
 use iced::daemon::{Appearance, DefaultStyle};
 use iced::widget::container;
 use iced::{Application, Color, Settings, Size, Subscription, Theme};
-use iced_grid::{Cell, CellMessage, Grid, GridMessage, RowData};
+use iced_grid::{Cell, CellMessage, Grid, GridData, GridMessage, RowData};
 use iced_grid::style::wrapper::{Style, Wrapper};
+
+use trace::trace;
 
 #[derive(Debug, Clone)]
 enum Message {
@@ -37,26 +39,6 @@ impl From<iced_grid::GridMessage> for Message {
         Message::Grid(grid_message)
     }
 }
-
-pub struct MyApp
-where 
-    Message: Clone
-{
-    resulting_rows: RefCell<Vec<RowData>>,
-}
-
-use iced::{Background};
-
-#[derive(Debug, Clone)]
-pub struct MyStyle {
-    pub background_color: Color,
-    pub text_color: Color,
-    pub padding: f32,
-}
-
-
-impl Default for MyApp {
-    fn default() -> Self {
         // let rows = vec![];
 
         
@@ -97,61 +79,86 @@ impl Default for MyApp {
         // .map(|row| RowData::new(std::mem::take(&mut row.cells)))
         // .collect());
         //let rows = vec![];
-        
+pub struct MyApp
+where 
+    Message: Clone
+{
+    grid_data: RefCell<GridData<Message, MyTheme>>
+    //resulting_rows: RefCell<Vec<RowData>>,
+}
+
+use iced::{Background};
+
+#[derive(Debug, Clone)]
+pub struct MyStyle {
+    pub background_color: Color,
+    pub text_color: Color,
+    pub padding: f32,
+}
+
+
+impl Default for MyApp {
+    fn default() -> Self {
+
         let mut row = RowData::default();
         row.push_text("Row 1, Cell 1".into());
         row.push_button("Add Row".into(), CellMessage::Clicked);
         row.push_button("Add Cell".into(), CellMessage::Clicked);
         row.push_container(container("New Cell").center(100));
         let mut row2 = RowData::default();
-        let resulting_rows = RefCell::new(vec![ row, row2 ]);
+        //let resulting_rows = RefCell::new(vec![ row, row2 ]);
+        //let fixed_rows = std::mem::take(&mut *resulting_rows.borrow_mut());
 
-        MyApp { resulting_rows }
+        let fixed_rows = vec![ row, row2 ];
+        let grid_data: RefCell<GridData<Message, MyTheme>> = RefCell::new(GridData::new(
+            fixed_rows, // Consume the rows for the grid
+            container::Style {
+                background: Some(Background::Color(Color::WHITE)),
+                ..Default::default()
+            },
+            |_offset: iced::widget::scrollable::AbsoluteOffset| Message::Grid(GridMessage::Sync),
+            400.0,
+            400.0,
+            Size::new(100.0, 100.0),
+            MyTheme::Main,
+        ));
+        MyApp { grid_data }
     }
 }
-
-
-
-
 impl MyApp {
-
+    //#[trace]
     fn view(&self) -> iced::Element<'_, Message, MyTheme> {
-        let rows = std::mem::take(&mut *self.resulting_rows.borrow_mut());
-
-        let grid: Grid<Message, MyTheme> = Grid::new(
-            rows, // Consume the rows for the grid
-            container::Style {
-                background: Some(Background::Color(Color::WHITE)),
-                ..Default::default()
-            },
-            |_offset: iced::widget::scrollable::AbsoluteOffset| Message::Grid(GridMessage::Sync),
-            400.0,
-            400.0,
-            Size::new(100.0, 100.0),
-            MyTheme::Main,
-        );
-
-
+        println!("Test");
+        let borrowed_grid_data = std::mem::take(&mut *self.grid_data.borrow_mut());
+        let grid: Grid<Message, MyTheme> = Grid { 
+            data: borrowed_grid_data
+         };
+        //  Element::new(
+        //     Wrapper { content: Box::new(&grid), theme: grid.data.theme, style: grid.data.style, target: Style }
+        // )
+        // iced::Element::new(grid.into())
         iced::Element::from(grid)
     }
-    
-    
-    
 
     fn update(&mut self, message: Message) {
-        let rows = std::mem::take(&mut *self.resulting_rows.borrow_mut());
-        let mut grid: Grid<Message, MyTheme> = Grid::new(
-            rows, // Consume the rows for the grid
-            container::Style {
-                background: Some(Background::Color(Color::WHITE)),
-                ..Default::default()
-            },
-            |_offset: iced::widget::scrollable::AbsoluteOffset| Message::Grid(GridMessage::Sync),
-            400.0,
-            400.0,
-            Size::new(100.0, 100.0),
-            MyTheme::Main,
-        );
+        let borrowed_grid_data = std::mem::take(&mut *self.grid_data.borrow_mut());
+        let mut grid: Grid<Message, MyTheme> = Grid { 
+            data: borrowed_grid_data
+         };
+         println!("Test2");
+       // let rows = std::mem::take(&mut *self.resulting_rows.borrow_mut());
+        // let mut grid: Grid<Message, MyTheme> = Grid::new(
+        //     rows, // Consume the rows for the grid
+        //     container::Style {
+        //         background: Some(Background::Color(Color::WHITE)),
+        //         ..Default::default()
+        //     },
+        //     |_offset: iced::widget::scrollable::AbsoluteOffset| Message::Grid(GridMessage::Sync),
+        //     400.0,
+        //     400.0,
+        //     Size::new(100.0, 100.0),
+        //     MyTheme::Main,
+        // );
 
         match message {
             Message::Ui(ui_message) => match ui_message {
@@ -273,3 +280,16 @@ fn main() -> iced::Result {
    
    iced::run("main", MyApp::update, MyApp::view)
 }
+
+// Grid::new(
+//     rows, // Consume the rows for the grid
+//     container::Style {
+//         background: Some(Background::Color(Color::WHITE)),
+//         ..Default::default()
+//     },
+//     |_offset: iced::widget::scrollable::AbsoluteOffset| Message::Grid(GridMessage::Sync),
+//     400.0,
+//     400.0,
+//     Size::new(100.0, 100.0),
+//     MyTheme::Main,
+// );

@@ -9,3 +9,4 @@ publish = false
 [dependencies]
 iced = "0.13"
 iced_grid  = { path = "./iced_grid" }
+trace = "*"
